@@ -1,91 +1,68 @@
+/**
+ * @file LinkedADTList.cpp
+ * @brief Implementation of LinkedADTList methods.
+ */
 #include "LinkedADTList.h"
-#include <utility>      // std::swap
+#include <string> // for explicit instantiation
 
-// ---------- internals ----------
-
-template <typename DataType>
-void LinkedADTList<DataType>::destroyAll() {
-    auto* cur = head_;
-    while (cur) {
-        auto* nxt = cur->next;
-        delete cur;
-        cur = nxt;
-    }
+// ----- helpers -----
+template <typename T>
+void LinkedADTList<T>::copyFrom(const LinkedADTList<T>& other) {
     head_ = nullptr;
-    len_ = 0;
-}
+    length_ = 0;
 
-template <typename DataType>
-void LinkedADTList<DataType>::copyFrom(const LinkedADTList& other) {
-    if (!other.head_) { head_ = nullptr; len_ = 0; return; }
-    // copy in original order
     Node* src = other.head_;
-    head_ = new Node(src->data);
-    Node* tail = head_;
-    src = src->next;
+    Node** tail = &head_;
     while (src) {
-        tail->next = new Node(src->data);
-        tail = tail->next;
+        *tail = new Node(src->data);
+        tail = &((*tail)->next);
         src = src->next;
+        ++length_;
     }
-    len_ = other.len_;
 }
 
-// ---------- rule of three ----------
+// ----- Big Three -----
+template <typename T>
+LinkedADTList<T>::LinkedADTList() : head_(nullptr), length_(0) {}
 
-template <typename DataType>
-LinkedADTList<DataType>::LinkedADTList(const LinkedADTList& other)
-    : head_(nullptr), len_(0) {
+template <typename T>
+LinkedADTList<T>::LinkedADTList(const LinkedADTList& other) : head_(nullptr), length_(0) {
     copyFrom(other);
 }
 
-template <typename DataType>
-LinkedADTList<DataType>& LinkedADTList<DataType>::operator=(const LinkedADTList& other) {
-    if (this == &other) return *this;
-    destroyAll();
-    copyFrom(other);
+template <typename T>
+LinkedADTList<T>& LinkedADTList<T>::operator=(const LinkedADTList& other) {
+    if (this != &other) {
+        makeEmpty();
+        copyFrom(other);
+    }
     return *this;
 }
 
-template <typename DataType>
-LinkedADTList<DataType>::~LinkedADTList() {
-    destroyAll();
+template <typename T>
+LinkedADTList<T>::~LinkedADTList() {
+    makeEmpty();
 }
 
-// ---------- core API ----------
-
-template <typename DataType>
-void LinkedADTList<DataType>::putItem(const DataType& item) {
-    // insert at head (unordered, O(1))
+// ----- Core ops -----
+template <typename T>
+void LinkedADTList<T>::putItem(const T& item) {
     Node* n = new Node(item);
     n->next = head_;
     head_ = n;
-    ++len_;
+    ++length_;
 }
 
-template <typename DataType>
-bool LinkedADTList<DataType>::getItem(const DataType& item, DataType& found) const {
-    for (Node* cur = head_; cur; cur = cur->next) {
-        if (cur->data == item) { found = cur->data; return true; }
-    }
-    return false;
-}
-
-template <typename DataType>
-void LinkedADTList<DataType>::makeEmpty() {
-    destroyAll();
-}
-
-template <typename DataType>
-bool LinkedADTList<DataType>::deleteItem(const DataType& item) {
+template <typename T>
+bool LinkedADTList<T>::deleteItem(const T& item) {
+    Node* cur = head_;
     Node* prev = nullptr;
-    Node* cur  = head_;
     while (cur) {
         if (cur->data == item) {
             if (prev) prev->next = cur->next;
             else      head_ = cur->next;
             delete cur;
-            --len_;
+            --length_;
             return true;
         }
         prev = cur;
@@ -94,24 +71,42 @@ bool LinkedADTList<DataType>::deleteItem(const DataType& item) {
     return false;
 }
 
-// ---------- iterator ----------
-
-template <typename DataType>
-typename LinkedADTList<DataType>::Iterator::reference
-LinkedADTList<DataType>::Iterator::operator*() const {
-    if (!cur_) throw std::out_of_range("LinkedADTList iterator deref at end");
-    return cur_->data;
+template <typename T>
+void LinkedADTList<T>::makeEmpty() {
+    Node* cur = head_;
+    while (cur) {
+        Node* nxt = cur->next;
+        delete cur;
+        cur = nxt;
+    }
+    head_ = nullptr;
+    length_ = 0;
 }
 
-template <typename DataType>
-typename LinkedADTList<DataType>::Iterator&
-LinkedADTList<DataType>::Iterator::operator++() {
-    if (cur_) cur_ = cur_->next;
-    return *this;
+template <typename T>
+bool LinkedADTList<T>::getItem(const T& key, T& found_item) const {
+    Node* cur = head_;
+    while (cur) {
+        if (cur->data == key) {
+            found_item = cur->data;
+            return true;
+        }
+        cur = cur->next;
+    }
+    return false;
 }
 
-// ------------- EXPLICIT INSTANTIATIONS (optional) -------------
+// ----- Queries -----
+template <typename T>
+int LinkedADTList<T>::getLength() const {
+    return length_;
+}
+
+template <typename T>
+bool LinkedADTList<T>::isFull() const {
+    return false; // linked list limited only by memory
+}
+
+// ----- Explicit instantiations for test types -----
 template class LinkedADTList<int>;
 template class LinkedADTList<std::string>;
-// Add other concrete types as needed, e.g. Customer
-// template class LinkedADTList<Customer>;

@@ -1,40 +1,87 @@
 /**
-* @file LinkedListDriver.cpp
- * @brief Demonstrates LinkedADTList with std::string and Customer types.
+ * @file LinkedADTList.cpp
+ * @brief Implementation of LinkedADTList methods.
  */
-#include <iostream>
-#include <fstream>
-#include <string>
 #include "LinkedADTList.h"
-#include "Customer.h"
 
-int main() {
-    // ---- Primitive demo: std::string ----
-    LinkedADTList<std::string> words;
-    words.putItem("apple");
-    words.putItem("banana");
-    words.putItem("cherry");
-
-    std::cout << "[Linked<string>] len=" << words.getLength() << " : ";
-    for (auto it = words.begin(); it != words.end(); ++it) std::cout << *it << " ";
-    std::cout << "\n";
-
-    bool found = false;
-    words.getItem(std::string("banana"), found);
-    std::cout << "[Linked<string>] find 'banana' -> " << (found ? "found" : "not found") << "\n";
-
-    // ---- Customer demo ----
-    LinkedADTList<Customer> custs;
-    std::ifstream fin("Customers.txt");
-    if (fin) {
-        Customer c;
-        while (fin >> c) custs.putItem(c);
+template <typename T>
+void LinkedADTList<T>::destroyAll() {
+    Node* cur = head_;
+    while (cur) {
+        Node* tmp = cur;
+        cur = cur->next;
+        delete tmp;
     }
-
-    std::cout << "[Linked<Customer>] loaded=" << custs.getLength() << "\n";
-    for (auto it = custs.begin(); it != custs.end(); ++it) {
-        std::cout << *it << "\n";
-    }
-    return 0;
+    head_ = nullptr;
+    length_ = 0;
 }
 
+template <typename T>
+void LinkedADTList<T>::copyFrom(const LinkedADTList& other) {
+    if (!other.head_) { head_ = nullptr; length_ = 0; return; }
+    head_ = new Node(other.head_->data);
+    Node* src = other.head_->next;
+    Node* tail = head_;
+    while (src) {
+        tail->next = new Node(src->data);
+        tail = tail->next;
+        src = src->next;
+    }
+    length_ = other.length_;
+}
+
+template <typename T>
+LinkedADTList<T>::LinkedADTList(const LinkedADTList& other)
+    : head_(nullptr), length_(0) {
+    copyFrom(other);
+}
+
+template <typename T>
+LinkedADTList<T>& LinkedADTList<T>::operator=(const LinkedADTList& other) {
+    if (this != &other) {
+        destroyAll();
+        copyFrom(other);
+    }
+    return *this;
+}
+
+template <typename T>
+LinkedADTList<T>::~LinkedADTList() {
+    destroyAll();
+}
+
+template <typename T>
+void LinkedADTList<T>::putItem(const T& item) {
+    Node* n = new Node(item, head_);
+    head_ = n;
+    ++length_;
+}
+
+template <typename T>
+bool LinkedADTList<T>::deleteItem(const T& key) {
+    Node* prev = nullptr;
+    Node* cur  = head_;
+    while (cur) {
+        if (cur->data == key) {
+            if (prev) prev->next = cur->next; else head_ = cur->next;
+            delete cur;
+            --length_;
+            return true;
+        }
+        prev = cur;
+        cur = cur->next;
+    }
+    return false;
+}
+
+template <typename T>
+bool LinkedADTList<T>::getItem(const T& key, T& out) const {
+    for (Node* cur = head_; cur; cur = cur->next) {
+        if (cur->data == key) { out = cur->data; return true; }
+    }
+    return false;
+}
+
+// Explicit instantiations for common test types
+template class LinkedADTList<int>;
+template class LinkedADTList<std::string>;
