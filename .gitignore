@@ -1,0 +1,14 @@
+# CLion / CMake
+cmake-build-debug/
+cmake-build-release/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+# IDE
+.idea/
+# OS / misc
+.DS_Store
+# Objects/binaries
+*.o
+*.a
+*.out

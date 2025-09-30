@@ -1,0 +1,115 @@
+name: Autograding
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ✅ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Show tool versions
+        run: |
+          cmake --version
+          g++ --version
+          ninja --version
+
+      - name: 🛠 Configure CMake
+        run: cmake -S . -B . -G Ninja
+
+      # ---------- Tests ----------
+      - name: 🧪 ArrayTest (20 pts)
+        run: |
+          cmake --build . --target ArrayTest
+          [ $? -eq 0 ] && ./ArrayTest
+        continue-on-error: true
+        id: array
+
+      - name: 🧪 LinkedTest (20 pts)
+        run: |
+          cmake --build . --target LinkedTest
+          [ $? -eq 0 ] && ./LinkedTest
+        continue-on-error: true
+        id: linked
+
+      - name: 🧪 ArrayIteratorTest (10 pts)
+        run: |
+          cmake --build . --target ArrayIteratorTest
+          [ $? -eq 0 ] && ./ArrayIteratorTest
+        continue-on-error: true
+        id: array_iter
+
+      - name: 🧪 LinkedIteratorTest (10 pts)
+        run: |
+          cmake --build . --target LinkedIteratorTest
+          [ $? -eq 0 ] && ./LinkedIteratorTest
+        continue-on-error: true
+        id: linked_iter
+
+      # ---------- Score ----------
+      - name: 🧮 Calculate total score
+        run: |
+          SCORE=0
+          [[ "${{ steps.array.outcome }}" == "success" ]] && SCORE=$((SCORE+20))
+          [[ "${{ steps.linked.outcome }}" == "success" ]] && SCORE=$((SCORE+20))
+          [[ "${{ steps.array_iter.outcome }}" == "success" ]] && SCORE=$((SCORE+10))
+          [[ "${{ steps.linked_iter.outcome }}" == "success" ]] && SCORE=$((SCORE+10))
+          echo "SCORE=$SCORE" >> $GITHUB_ENV
+
+      - name: 📊 Score Summary
+        run: |
+          echo "Autograded Score Breakdown:"
+          [[ "${{ steps.array.outcome }}" == "success" ]] \
+            && echo "ArrayTest           : 20/20 ✅" \
+            || echo -e "\033[31mArrayTest           : 0/20 ❌\033[0m"
+          
+          [[ "${{ steps.linked.outcome }}" == "success" ]] \
+            && echo "LinkedTest          : 20/20 ✅" \
+            || echo -e "\033[31mLinkedTest          : 0/20 ❌\033[0m"
+          
+          [[ "${{ steps.array_iter.outcome }}" == "success" ]] \
+            && echo "ArrayIteratorTest   : 10/10 ✅" \
+            || echo -e "\033[31mArrayIteratorTest   : 0/10 ❌\033[0m"
+          
+          [[ "${{ steps.linked_iter.outcome }}" == "success" ]] \
+            && echo "LinkedIteratorTest  : 10/10 ✅" \
+            || echo -e "\033[31mLinkedIteratorTest  : 0/10 ❌\033[0m"
+          
+          echo ""
+          echo "👉 Auto-Graded Score: ${{ env.SCORE }}/60"
+          if [ "${{ env.SCORE }}" -eq 60 ]; then
+            echo -e "🎉🎉 \033[32mPerfect Score! Great job!\033[0m 🎉🎉"
+          fi
+
+      # ---------- Badge ----------
+      - name: 🏷️ Generate Points Badge
+        uses: markpatterson27/points-bar@v1
+        with:
+          points: ${{ env.SCORE }}/60
+          path: .github/badges/points-bar.svg
+          label: Score
+
+      - name: 🚀 Push badge to badges branch
+        if: always()
+        run: |
+          cp .github/badges/points-bar.svg points-bar.svg
+          
+          git clone --single-branch --branch badges https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} temp-badges || (
+            git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} temp-badges && \
+            cd temp-badges && git checkout --orphan badges
+          )
+          
+          cd temp-badges
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          
+          mkdir -p .github/badges
+          mv ../points-bar.svg .github/badges/points-bar.svg
+          
+          git add .github/badges/points-bar.svg
+          git commit -m "Update points badge" || echo "No changes to commit"
+          git push origin badges
