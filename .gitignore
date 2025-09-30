@@ -1,14 +1,21 @@
-# CLion / CMake
+# CLion / CMake build folders
 cmake-build-debug/
 cmake-build-release/
 CMakeFiles/
 CMakeCache.txt
 compile_commands.json
+Makefile
+
 # IDE
 .idea/
-# OS / misc
+.vscode/
+
+# macOS system files
 .DS_Store
-# Objects/binaries
+
+# Object / binary files
 *.o
 *.a
+*.so
+*.exe
 *.out
