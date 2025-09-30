@@ -8,7 +8,7 @@
 #include "Customer.h"
 
 int main() {
-    // ---- Primitive demo: int ----
+    // ---- Primitive demo: int -----
     ArrayADTList<int> ints(16);
     ints.putItem(10);
     ints.putItem(20);

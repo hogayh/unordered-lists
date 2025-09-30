@@ -3,59 +3,133 @@
 
 #include <string>
 #include <ostream>
-#include <istream>
+#include "Date.h"
 
-/**
- * @brief Minimal Customer that stores a name and an integer ID.
- *        Input format: "Name,ID" per line (e.g., "Alice,1001").
- */
-class Customer {
-public:
-    Customer() = default;
-    Customer(std::string name, int id) : name_(std::move(name)), id_(id) {}
+// Make std names visible to tests that use plain `string`/`ostream`
+using std::string;
+using std::ostream;
 
-    /// @return customer's display name
-    const std::string& name() const { return name_; }
-    /// @return customer's numeric ID
-    int id() const { return id_; }
-
-    /// Equality compares IDs (useful for search/delete).
-    bool operator==(const Customer& rhs) const { return id_ == rhs.id_; }
-
-    /// Prints "Name (ID)".
-    friend std::ostream& operator<<(std::ostream& os, const Customer& c) {
-        return os << c.name_ << " (" << c.id_ << ")";
-    }
-
-    /// Reads "Name,ID" from a single line.
-    friend std::istream& operator>>(std::istream& is, Customer& c) {
-        std::string line;
-        if (!std::getline(is, line)) return is;
-        if (line.empty()) return is;
-        auto comma = line.find(',');
-        std::string name = comma == std::string::npos ? line : line.substr(0, comma);
-        std::string idstr = comma == std::string::npos ? "0" : line.substr(comma + 1);
-
-        // light trim
-        auto trim = [](std::string& s) {
-            const char* ws = " \t\r\n";
-            auto a = s.find_first_not_of(ws);
-            auto b = s.find_last_not_of(ws);
-            s = (a == std::string::npos) ? std::string() : s.substr(a, b - a + 1);
-        };
-        trim(name); trim(idstr);
-
-        int id = 0;
-        try { id = std::stoi(idstr); } catch (...) { id = 0; }
-
-        c.name_ = std::move(name);
-        c.id_ = id;
-        return is;
-    }
-
-private:
-    std::string name_;
-    int id_{0};
+enum CustomerCompareOptions {
+    FullName,
+    UserName,
+    CustomerID,
+    CustomerSince,
+    DateOfBirth,
+    CreditScore,
+    HouseholdIncome,
+    TotalSales
 };
+
+class Customer {
+private:
+    // Fields (match TSV order)
+    string customer_id;
+    string username;
+    string first_name;
+    string last_name;
+    string street_address;
+    string city;
+    string state;
+    string postal_code;
+    string email_address;
+    string gender;
+    string company;
+    string job_title;
+    Date   customer_since;
+    string social_security_number;
+    Date   date_of_birth;
+    int    household_income = 0;
+    int    credit_score     = 0;
+    double total_sales      = 0.0;
+
+    // helper function to compare this customer with another one
+    int threeWayCompare(const Customer& rhs) const;
+
+    // shared comparison mode
+    static CustomerCompareOptions compareWith;
+
+public:
+    // ===== Constructors =====
+    Customer();
+    Customer(string customer_id, string username, string first_name, string last_name,
+             string street_address, string city, string state, string postalCode,
+             string email, string gender, string company, string job_title,
+             Date customer_since, string social_security_number, Date date_of_birth,
+             int household_income, int credit_score, double total_sales);
+    explicit Customer(string record); // TSV line
+
+    // ===== Getters/Setters =====
+    void setCustomerID(string customer_id);
+    string getCustomerID();
+
+    string getUserName();
+    void setUserName(string username);
+
+    string getFirstName() const;
+    void setFirstName(string first_name);
+
+    string getLastName() const;
+    void setLastName(string last_name);
+
+    string getStreetAddress() const;
+    void setStreetAddress(string street_address);
+
+    string getCity() const;
+    void setCity(string city);
+
+    string getState() const;
+    void setState(string state);
+
+    string getPostalCode() const;
+    void setPostalCode(string postal_code);
+
+    string getEmail() const;
+    void setEmail(string email);
+
+    string getGender() const;
+    void setGender(string gender);
+
+    string getCompany() const;
+    void setCompany(string company);
+
+    string getJobTitle() const;
+    void setJobTitle(string job_title);
+
+    void setSocialSecurityNumber(string social_security_number);
+    string getSocialSecurityNumber();
+
+    Date getCustomerSince() const;
+    void setCustomerSince(Date customer_since);
+
+    Date getDateOfBirth() const;
+    void setDateOfBirth(Date date_of_birth);
+
+    int getHouseholdIncome() const;
+    void setHouseholdIncome(int household_income);
+
+    int getCreditScore() const;
+    void setCreditScore(int credit_score);
+
+    double getTotalSales() const;
+    void setTotalSales(double total_sales);
+
+    // ===== Static compare mode =====
+    static CustomerCompareOptions getCompareWith();
+    static void setCompareWith(CustomerCompareOptions code);
+
+    // ===== Stringify =====
+    string toString() const;
+
+    // ===== Relational operators =====
+    bool operator==(const Customer& rhs) const;
+    bool operator!=(const Customer& rhs) const;
+    bool operator<(const Customer& rhs)  const;
+    bool operator<=(const Customer& rhs) const;
+    bool operator>(const Customer& rhs)  const;
+    bool operator>=(const Customer& rhs) const;
+};
+
+// stream insertion (not a member)
+ostream& operator<<(ostream& out, const Customer& customer);
 
 #endif // CUSTOMER_H

@@ -14,6 +14,9 @@ private:
     };
 
 public:
+    /**
+     *
+     */
     class Iterator {
     public:
         explicit Iterator(Node* ptr) : cur(ptr) {}

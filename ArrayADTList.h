@@ -17,7 +17,7 @@ private:
     std::size_t capacity_;
 
 public:
-    // ---------- Iterator ----------
+    // ---------- Iterator -----------
     class Iterator {
         T* cur_;
         T* end_;
